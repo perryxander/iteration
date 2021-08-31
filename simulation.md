@@ -31,7 +31,7 @@ sim_mean_sd(30)
     ## # A tibble: 1 x 2
     ##    mean    sd
     ##   <dbl> <dbl>
-    ## 1  2.26  4.40
+    ## 1  3.33  3.70
 
 ## Let’s simulate a lot
 
@@ -52,16 +52,16 @@ bind_rows(output)
     ## # A tibble: 100 x 2
     ##     mean    sd
     ##    <dbl> <dbl>
-    ##  1  3.39  4.82
-    ##  2  3.80  3.95
-    ##  3  3.14  4.41
-    ##  4  1.39  3.60
-    ##  5  3.63  4.29
-    ##  6  2.87  3.65
-    ##  7  2.36  3.83
-    ##  8  3.43  3.59
-    ##  9  1.78  3.64
-    ## 10  2.35  3.70
+    ##  1  3.53  3.18
+    ##  2  3.44  3.84
+    ##  3  3.45  3.53
+    ##  4  1.68  3.69
+    ##  5  3.95  4.22
+    ##  6  3.27  4.34
+    ##  7  2.05  4.05
+    ##  8  3.10  3.72
+    ##  9  3.55  4.11
+    ## 10  3.87  3.79
     ## # ... with 90 more rows
 
 Let’s use a loop function
@@ -77,16 +77,16 @@ sim_results
     ## # A tibble: 100 x 2
     ##     mean    sd
     ##    <dbl> <dbl>
-    ##  1  4.23  3.43
-    ##  2  4.14  4.41
-    ##  3  2.16  3.92
-    ##  4  2.43  3.50
-    ##  5  3.30  5.18
-    ##  6  2.66  3.71
-    ##  7  2.58  3.79
-    ##  8  3.26  4.01
-    ##  9  3.33  4.29
-    ## 10  2.58  3.52
+    ##  1  3.63  4.15
+    ##  2  4.86  4.29
+    ##  3  3.32  3.96
+    ##  4  3.82  4.97
+    ##  5  2.16  4.08
+    ##  6  4.67  3.55
+    ##  7  3.08  4.12
+    ##  8  3.36  3.99
+    ##  9  3.62  4.76
+    ## 10  3.13  4.35
     ## # ... with 90 more rows
 
 Let’s look at results
@@ -109,7 +109,7 @@ sim_results %>%
     ## # A tibble: 1 x 2
     ##   avg_samp_mean sd_samp_mean
     ##           <dbl>        <dbl>
-    ## 1          3.00        0.666
+    ## 1          2.98        0.756
 
 ``` r
 sim_results %>%
@@ -117,3 +117,77 @@ sim_results %>%
 ```
 
 <img src="simulation_files/figure-gfm/unnamed-chunk-5-2.png" width="90%" />
+
+## Let’s try other sample sizes.
+
+Create a list with four elements- function runs simulation the amount of
+time in each element and binds the rows
+
+``` r
+n_list =
+  list(
+    "n = 30" = 30,
+    "n = 60" = 60,
+    "n = 120" = 120,
+    "n = 240" = 240
+  )
+
+
+output = vector("list", length = 4)
+
+output[[1]] = rerun(100, sim_mean_sd(samp_size = n_list[[1]])) %>% bind_rows()
+output[[2]] = rerun(100, sim_mean_sd(samp_size = n_list[[2]])) %>% bind_rows()
+
+
+for(i in 1:4) {
+  
+  output[[i]] = 
+    rerun(100, sim_mean_sd(samp_size = n_list[[i]])) %>% 
+    bind_rows()
+  
+}
+```
+
+``` r
+sim_results =
+  tibble(
+    sample_size = c(30,60,120,240)
+  ) %>%
+  mutate(
+    output_lists = map(.x = sample_size, ~ rerun(1000,sim_mean_sd(.x))),
+    estimate_df = map(output_lists, bind_rows)
+  ) %>%
+  select(-output_lists) %>%
+  unnest(estimate_df)
+```
+
+Do some data frame things.
+
+``` r
+sim_results %>%
+  mutate(
+    sample_size = str_c("n = ", sample_size),
+    sample_size = fct_inorder(sample_size)
+  ) %>%
+  ggplot(aes(x = sample_size, y = mean)) +
+  geom_boxplot()
+```
+
+<img src="simulation_files/figure-gfm/unnamed-chunk-8-1.png" width="90%" />
+
+``` r
+sim_results %>%
+  group_by(sample_size) %>%
+  summarize(
+    avg_samp_mean = mean(mean),
+    sd_samp_mean = sd(mean)
+  )
+```
+
+    ## # A tibble: 4 x 3
+    ##   sample_size avg_samp_mean sd_samp_mean
+    ##         <dbl>         <dbl>        <dbl>
+    ## 1          30          3.00        0.703
+    ## 2          60          3.02        0.523
+    ## 3         120          3.00        0.377
+    ## 4         240          3.00        0.261
