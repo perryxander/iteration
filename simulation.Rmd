@@ -30,6 +30,8 @@ scale_fill_discrete = scale_fill_viridis_d
 
 ## Let's simulate something.
 
+I have a function.
+
 ```{r}
 sim_mean_sd = function(samp_size, mu = 3, sigma = 4) {
   
@@ -47,10 +49,67 @@ sim_mean_sd = function(samp_size, mu = 3, sigma = 4) {
 }
 ```
 
+I can "simulate" by running this line.
 
 ```{r}
 sim_mean_sd(30)
 ```
+
+
+## Let's simulate a lot
+
+Let's start with a for loop
+
+```{r}
+output = vector("list", length = 100)
+
+for (i in 1:100) {
+  
+  output[[i]] = sim_mean_sd(samp_size = 30)
+  
+}
+
+bind_rows(output)
+```
+
+
+Let's use a loop function
+
+
+```{r}
+sim_results =
+  rerun(100, sim_mean_sd(samp_size = 30)) %>%
+  bind_rows()
+
+sim_results
+```
+
+Let's look at results
+
+```{r}
+sim_results %>%
+  ggplot(aes(x = mean)) + geom_density()
+
+sim_results %>%
+  summarize(
+    avg_samp_mean = mean(mean),
+    sd_samp_mean = sd(mean)
+  )
+
+sim_results %>%
+  ggplot(aes(x = sd)) + geom_density()
+```
+
+
+
+
+
+
+
+
+
+
+
 
 
 
